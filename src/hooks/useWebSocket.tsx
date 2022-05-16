@@ -5,7 +5,8 @@ export const useWebSocket = () => {
   const [webSocket, setWebSocket] = React.useState<WebSocket>();
 
   React.useEffect(() => {
-    const address = "ws://localhost:8080";
+    const protocol = window.location.protocol === 'http:' ? 'ws' : 'wss';
+    const address = `${protocol}://${window.location.hostname}:8080`;
     const ws = new WebSocket(address);
     setWebSocket(ws);
     return () => {};
