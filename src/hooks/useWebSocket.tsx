@@ -6,7 +6,7 @@ export const useWebSocket = () => {
 
   React.useEffect(() => {
     const protocol = window.location.protocol === 'http:' ? 'ws' : 'wss';
-    const port = window.location.hostname === 'localhost' ? ':8080' : '';
+    const port = !window.location.hostname.includes('herokuapp') ? ':8080' : '';
     const address = `${protocol}://${window.location.hostname}${port}`;
     const ws = new WebSocket(address);
 

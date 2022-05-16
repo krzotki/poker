@@ -143,6 +143,8 @@ wss.on("connection", (ws) => {
       sendRoomDataToAll(newRoom);
     }
 
+    console.log(packet, ws.username)
+
     if (ws.username && packet.type === "JOIN_ROOM") {
       const { roomName, password } = packet.payload;
       if (
