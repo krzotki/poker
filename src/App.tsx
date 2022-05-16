@@ -50,7 +50,7 @@ function App() {
 
   return (
     <div className={styles.app}>
-      Poker
+      Poker planning
       {roomInfo ? (
         <RoomView
           roomInfo={roomInfo}
