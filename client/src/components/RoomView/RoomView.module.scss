@@ -1,0 +1,21 @@
+.voteOption {
+    border-radius: 5px;
+    padding: 0.75em 1em;
+    margin: 0.5em;
+    cursor: pointer;
+}
+
+.voteOption.selected {
+    background-color: green;
+    color: white;
+    transform: scale(1.2);
+}
+
+
+.userVoted {
+    color: green;
+}
+
+.timeCounter {
+    color: blue;
+}

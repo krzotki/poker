@@ -39,10 +39,32 @@ export const usePacketFactory = (ws: WebSocket | undefined) => {
     })
   }, [send])
 
+  const setVote = React.useCallback((vote: number) => {
+    send({
+      type: 'SET_VOTE',
+      payload: vote
+    })
+  }, [send])
+
+  const uncoverCards = React.useCallback(() => {
+    send({
+      type: 'UNCOVER_CARDS'
+    })
+  }, [send])
+
+  const resetVoting = React.useCallback(() => {
+    send({
+      type: 'RESET_VOTING'
+    })
+  }, [send])
+
   return {
     sendMessage,
     setUserName,
     createRoom,
-    joinRoom
+    joinRoom,
+    setVote,
+    uncoverCards,
+    resetVoting
   }
 };

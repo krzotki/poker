@@ -12,12 +12,15 @@ function App() {
     setUserName: sendSetUserName,
     createRoom,
     joinRoom,
+    setVote,
+    resetVoting,
+    uncoverCards,
   } = usePacketFactory(ws);
 
   const [roomInfo, setRoomInfo] = React.useState<RoomInfo>();
   const [username, setUsername] = React.useState<string>();
   const [hasSetUsername, setHasSetUsername] = React.useState(false);
-  const [roomName, setRoomName] = React.useState<string>();
+  const [roomName, setRoomName] = React.useState<string>('room');
   const [roomPassword, setRoomPassword] = React.useState<string>();
 
   usePacketHandlers(ws, {
@@ -29,7 +32,7 @@ function App() {
     if (username) {
       sendSetUserName(username);
       setHasSetUsername(true);
-      setRoomName(`${username}'s room`);
+      // setRoomName(`${username}'s room`);
     }
   }, [username]);
 
@@ -49,7 +52,12 @@ function App() {
     <div className={styles.app}>
       Poker
       {roomInfo ? (
-        <RoomView roomInfo={roomInfo}/>
+        <RoomView
+          roomInfo={roomInfo}
+          handleVote={setVote}
+          handleUncoverCards={uncoverCards}
+          handleResetVoting={resetVoting}
+        />
       ) : !hasSetUsername ? (
         <div>
           <input onChange={(evt) => setUsername(evt.target.value)} />
