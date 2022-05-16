@@ -1,8 +1,23 @@
-const WebSocket = require("ws");
 
-const wss = new WebSocket.Server({
-  port: 8080,
+const express = require('express');
+const http = require('http');
+const WebSocket = require('ws');
+
+
+const app = express();
+const server = http.createServer(app);
+
+app.get("/", function (req, res) {
+  res.sendFile(__dirname + "/build/index.html");
 });
+
+app.use("/", express.static(__dirname + "/build/"));
+
+server.listen(process.env.PORT || 8080, () => {
+  console.log(`Server started on port ${server.address().port} :)`);
+});
+
+const wss = new WebSocket.Server({ server });
 
 const rooms = {};
 
@@ -82,7 +97,7 @@ wss.on("connection", (ws) => {
 
       const allVoted = !joinedRoom.users.find((user) => !user.uservote);
 
-      console.log('UNCOVER', {allVoted})
+      console.log("UNCOVER", { allVoted });
 
       if (allVoted) {
         joinedRoom.lockedVoting = true;
@@ -95,13 +110,13 @@ wss.on("connection", (ws) => {
       }
     }
 
-    if(packet.type === 'RESET_VOTING') {
+    if (packet.type === "RESET_VOTING") {
       const joinedRoom = rooms[ws.roomName];
       if (!joinedRoom || joinedRoom.cardsCovered) return;
 
       joinedRoom.lockedVoting = false;
       joinedRoom.cardsCovered = true;
-      joinedRoom.users.forEach(user => user.uservote = null);
+      joinedRoom.users.forEach((user) => (user.uservote = null));
 
       sendRoomDataToAll(joinedRoom);
     }
