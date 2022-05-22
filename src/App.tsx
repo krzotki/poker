@@ -50,7 +50,7 @@ function App() {
 
   return (
     <div className={styles.app}>
-      Poker planning
+      <p className={styles.title}>Planning Poker</p>
       {roomInfo ? (
         <RoomView
           roomInfo={roomInfo}
@@ -59,9 +59,9 @@ function App() {
           handleResetVoting={resetVoting}
         />
       ) : !hasSetUsername ? (
-        <div>
-          <input onChange={(evt) => setUsername(evt.target.value)} />
-          <button onClick={handleSetUsernameClick}>Set username</button>
+        <div className={styles.usernameForm}>
+          <input placeholder="Name..." onChange={(evt) => setUsername(evt.target.value)} />
+          <button onClick={handleSetUsernameClick}>SET USERNAME</button>
         </div>
       ) : (
         <RoomForm

@@ -1,4 +1,71 @@
 .app {
-  font-family: "Trebuchet MS", "Lucida Sans Unicode", "Lucida Grande",
-    "Lucida Sans", Arial, sans-serif;
+  background-color: #9FB4FF;
+  height: 100%;
+  font-family: 'Chakra Petch', sans-serif;
+}
+
+.app .title{
+  font-size: 4em;
+  text-align: center;
+  letter-spacing: 0.05em;
+  font-weight: 700;
+  color: #ffffff;
+  margin: 0;
+  padding: 1em;
+}
+
+.usernameForm {
+  border-radius: 2em;
+  height: 40%;
+  width: 75%;
+  max-width: 600px;
+  display: flex;
+  margin: 0 auto;
+  justify-content: center;
+  flex-direction: column;
+  align-items: center;
+  background-color: #ffffff;
+  box-sizing: border-box;
+  box-shadow: 15px 15px #0E185F;
+  font-family: 'Chakra Petch', sans-serif;
+}
+
+.usernameForm input{
+  padding: 0.5em 0.1em 0.5em 0.5em;
+  color: #ffffff;
+  background-color: #fce3ab;
+  font-weight: 600;
+  font-size: 1.4em;
+  border-radius: 2em;
+  margin-top: 2em;
+  width: 65%;
+  text-align: center;
+  font-family: 'Chakra Petch', sans-serif;
+  border: none;
+}
+
+.usernameForm input::placeholder{
+  color: #ffffff;
+  font-family: 'Chakra Petch', sans-serif;
+  font-weight: 600;
+  text-align: center; 
+}
+
+.usernameForm button{
+  border-radius: 1em;
+  background-color: #5df4bc;
+  color: white;
+  padding: 1em;
+  margin: 3em auto;
+  cursor: pointer;
+  font-weight: 700;
+  font-size: 1.1em;
+  letter-spacing: 0.05em;
+  border: none;
+  font-family: 'Chakra Petch', sans-serif;
+}
+
+.usernameForm button:hover{
+  box-shadow: 5px 5px #7900FF;
+  transition: all 0.5s
 }

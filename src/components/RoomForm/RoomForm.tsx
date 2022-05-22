@@ -1,3 +1,7 @@
+import styles from "./../../App.module.scss";
+import css from "./RoomForm.module.scss";
+import cx from "classnames";
+
 type PropsType = {
   setRoomName: (roomName: string) => void;
   roomName: string | undefined;
@@ -14,19 +18,22 @@ export const RoomForm = ({
   setRoomPassword,
 }: PropsType) => {
   return (
-    <div>
-      <input
-        onChange={(evt) => setRoomName(evt.target.value)}
-        placeholder="Room name"
-        value={roomName}
-      />
-      <input
-        type="password"
-        onChange={(evt) => setRoomPassword(evt.target.value)}
-        placeholder="Room password"
-      />
-      <button onClick={handleCreateRoom}>Create room</button>
-      <button onClick={handleJoinRoom}>Join room</button>
+    <div className={cx(styles.usernameForm, css.gameForm)}>
+        <input
+          onChange={(evt) => setRoomName(evt.target.value)}
+          placeholder="Room name"
+          value={roomName}
+        />
+        <input
+          type="password"
+          onChange={(evt) => setRoomPassword(evt.target.value)}
+          placeholder="Room password"
+        />
+      
+      <div className={css.buttons}>
+        <button onClick={handleJoinRoom}>JOIN ROOM</button>
+        <button onClick={handleCreateRoom}>CREATE ROOM</button>
+      </div>
     </div>
   );
 };
