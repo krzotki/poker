@@ -1,8 +1,6 @@
-
-const express = require('express');
-const http = require('http');
-const WebSocket = require('ws');
-
+const express = require("express");
+const http = require("http");
+const WebSocket = require("ws");
 
 const app = express();
 const server = http.createServer(app);
@@ -49,6 +47,25 @@ const sendRoomDataToAll = (room) => {
   });
 };
 
+const sendError = (user, message) => {
+  console.log('send error', message);
+  user.send(
+    JSON.stringify({
+      type: "ERROR_MESSAGE",
+      payload: message,
+    })
+  );
+};
+
+const sendSetUsername = (user) => {
+  user.send(
+    JSON.stringify({
+      type: "SET_USERNAME",
+      payload: user.username
+    })
+  );
+}
+
 wss.on("connection", (ws) => {
   console.log("Connected");
 
@@ -72,12 +89,19 @@ wss.on("connection", (ws) => {
     if (packet.type === "SET_USERNAME") {
       const username = packet.payload;
 
+      if(!username || username.length < 3) {
+        sendError(ws, 'Please provide username that is at least 3 chars long.');
+        return;
+      }
+
       ws.username = username;
 
       const joinedRoom = rooms[ws.roomName];
       if (joinedRoom) {
         sendRoomDataToAll(joinedRoom);
       }
+
+      sendSetUsername(ws);
     }
 
     if (packet.type === "SET_VOTE") {
@@ -96,8 +120,6 @@ wss.on("connection", (ws) => {
       if (!joinedRoom || joinedRoom.lockedVoting) return;
 
       const allVoted = !joinedRoom.users.find((user) => !user.uservote);
-
-      console.log("UNCOVER", { allVoted });
 
       if (allVoted) {
         joinedRoom.lockedVoting = true;
@@ -125,6 +147,7 @@ wss.on("connection", (ws) => {
       const { roomName, password } = packet.payload;
 
       if (rooms[roomName] || rooms[ws.roomName]) {
+        sendError(ws, "Room already exists!");
         return;
       }
 
@@ -143,21 +166,29 @@ wss.on("connection", (ws) => {
       sendRoomDataToAll(newRoom);
     }
 
-    console.log(packet, ws.username)
+    console.log(packet, ws.username);
 
     if (ws.username && packet.type === "JOIN_ROOM") {
       const { roomName, password } = packet.payload;
-      if (
-        rooms[roomName] &&
-        rooms[roomName].password === password &&
-        ws.roomName !== roomName
-      ) {
-        ws.roomName = roomName;
 
-        rooms[roomName].users.push(ws);
-
-        sendRoomDataToAll(rooms[roomName]);
+      if (!rooms[roomName]) {
+        sendError(ws, "Room does not exist!");
+        return;
       }
+
+      if (rooms[roomName].password !== password) {
+        sendError(ws, "Incorrect room password!");
+        return;
+      }
+
+      if (ws.roomName === roomName) {
+        sendError(ws, "You have already joined this room!");
+        return;
+      }
+
+      ws.roomName = roomName;
+      rooms[roomName].users.push(ws);
+      sendRoomDataToAll(rooms[roomName]);
     }
 
     if (packet.type === "MESSAGE") {

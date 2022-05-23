@@ -12,7 +12,7 @@ export const usePacketFactory = (ws: WebSocket | undefined) => {
     });
   }, [send]);
 
-  const setUserName = React.useCallback((username: string) => {
+  const setUserName = React.useCallback((username?: string) => {
     send({
       type: 'SET_USERNAME',
       payload: username

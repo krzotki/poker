@@ -5,6 +5,9 @@ import { usePacketHandlers } from "./hooks/usePacketHandlers";
 import { RoomForm } from "./components/RoomForm/RoomForm";
 import { RoomView, RoomInfo } from "./components/RoomView/RoomView";
 import React from "react";
+import { useErrorVisibility } from "./hooks/useErrorVisibility";
+import { ErrorPopup } from "./components/ErrorPopup/ErrorPopup";
+import { UsernameForm } from "./components/UsernameForm/UsernameForm";
 
 function App() {
   const ws = useWebSocket();
@@ -20,20 +23,23 @@ function App() {
   const [roomInfo, setRoomInfo] = React.useState<RoomInfo>();
   const [username, setUsername] = React.useState<string>();
   const [hasSetUsername, setHasSetUsername] = React.useState(false);
-  const [roomName, setRoomName] = React.useState<string>('room');
+  const [roomName, setRoomName] = React.useState<string>("room");
   const [roomPassword, setRoomPassword] = React.useState<string>();
+  const { showError, errorMessage } = useErrorVisibility();
 
   usePacketHandlers(ws, {
     MESSAGE: (data: any) => console.log("CLIENT MESSAGE", data),
     ROOM_INFO: setRoomInfo,
+    ERROR_MESSAGE: (data) => {
+      console.log(data);
+      showError(data);
+    },
+    SET_USERNAME: () => setHasSetUsername(true),
   });
 
   const handleSetUsernameClick = React.useCallback(() => {
-    if (username) {
-      sendSetUserName(username);
-      setHasSetUsername(true);
-      // setRoomName(`${username}'s room`);
-    }
+    sendSetUserName(username);
+    // setRoomName(`${username}'s room`);
   }, [username]);
 
   const handleCreateRoom = React.useCallback(() => {
@@ -50,6 +56,7 @@ function App() {
 
   return (
     <div className={styles.app}>
+      {errorMessage && <ErrorPopup message={errorMessage} />}
       <p className={styles.title}>Planning Poker</p>
       {roomInfo ? (
         <RoomView
@@ -59,10 +66,10 @@ function App() {
           handleResetVoting={resetVoting}
         />
       ) : !hasSetUsername ? (
-        <div className={styles.usernameForm}>
-          <input placeholder="Name..." onChange={(evt) => setUsername(evt.target.value)} />
-          <button onClick={handleSetUsernameClick}>SET USERNAME</button>
-        </div>
+        <UsernameForm
+          handleSetUsernameClick={handleSetUsernameClick}
+          setUsername={setUsername}
+        />
       ) : (
         <RoomForm
           handleCreateRoom={handleCreateRoom}
