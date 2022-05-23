@@ -8,6 +8,7 @@ import React from "react";
 import { useErrorVisibility } from "./hooks/useErrorVisibility";
 import { ErrorPopup } from "./components/ErrorPopup/ErrorPopup";
 import { UsernameForm } from "./components/UsernameForm/UsernameForm";
+import { Router } from "react-router-dom";
 
 function App() {
   const ws = useWebSocket();
@@ -18,6 +19,7 @@ function App() {
     setVote,
     resetVoting,
     uncoverCards,
+    quitRoom
   } = usePacketFactory(ws);
 
   const [roomInfo, setRoomInfo] = React.useState<RoomInfo>();
@@ -40,19 +42,15 @@ function App() {
   const handleSetUsernameClick = React.useCallback(() => {
     sendSetUserName(username);
     // setRoomName(`${username}'s room`);
-  }, [username]);
+  }, [username, sendSetUserName]);
 
   const handleCreateRoom = React.useCallback(() => {
-    if (roomName && roomPassword) {
-      createRoom(roomName, roomPassword);
-    }
-  }, [roomName, roomPassword]);
+    createRoom(roomName, roomPassword);
+  }, [roomName, roomPassword, createRoom]);
 
   const handleJoinRoom = React.useCallback(() => {
-    if (roomName && roomPassword) {
-      joinRoom(roomName, roomPassword);
-    }
-  }, [roomName, roomPassword]);
+    joinRoom(roomName, roomPassword);
+  }, [roomName, roomPassword, joinRoom]);
 
   return (
     <div className={styles.app}>
@@ -64,6 +62,7 @@ function App() {
           handleVote={setVote}
           handleUncoverCards={uncoverCards}
           handleResetVoting={resetVoting}
+          handleBackClick={quitRoom}
         />
       ) : !hasSetUsername ? (
         <UsernameForm
@@ -77,6 +76,10 @@ function App() {
           roomName={roomName}
           setRoomName={setRoomName}
           setRoomPassword={setRoomPassword}
+          handleBackClick={() => {
+            setUsername('');
+            setHasSetUsername(false);
+          }}
         />
       )}
     </div>

@@ -1,6 +1,9 @@
 import css from "./RoomView.module.scss";
+import styles from '../../App.module.scss';
 import cx from "classnames";
 import React from "react";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faCircleArrowLeft } from "@fortawesome/free-solid-svg-icons";
 
 type User = {
   name: string;
@@ -20,6 +23,7 @@ type PropsType = {
   handleVote: (vote: number) => void;
   handleUncoverCards: () => void;
   handleResetVoting: () => void;
+  handleBackClick: () => void;
 };
 
 const VOTING_OPTIONS = [0, 1, 2, 3, 5, 8, 13];
@@ -29,6 +33,7 @@ export const RoomView = ({
   handleVote,
   handleUncoverCards,
   handleResetVoting,
+  handleBackClick
 }: PropsType) => {
   const [userVote, setUserVote] = React.useState<number>();
   const [timeCounter, setTimeCounter] = React.useState<number>(3);
@@ -71,6 +76,7 @@ export const RoomView = ({
 
   return (
     <div>
+      <FontAwesomeIcon onClick={handleBackClick} className={styles.backButton} icon={faCircleArrowLeft} />
       <h1>Room name: {roomInfo.roomName}</h1>
       <p>Connected users:</p>
       {roomInfo.users.map((user, index) => (

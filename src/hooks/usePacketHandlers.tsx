@@ -20,5 +20,5 @@ export const usePacketHandlers = (
     return () => {
       ws.onmessage = null;
     };
-  }, [ws]);
+  }, [ws, handlers]);
 };

@@ -19,7 +19,7 @@ export const usePacketFactory = (ws: WebSocket | undefined) => {
     })
   }, [send])
 
-  const createRoom = React.useCallback((roomName: string, password: string) => {
+  const createRoom = React.useCallback((roomName?: string, password?: string) => {
     send({
       type: 'CREATE_ROOM',
       payload: {
@@ -29,7 +29,7 @@ export const usePacketFactory = (ws: WebSocket | undefined) => {
     })
   }, [send])
 
-  const joinRoom = React.useCallback((roomName: string, password: string) => {
+  const joinRoom = React.useCallback((roomName?: string, password?: string) => {
     send({
       type: 'JOIN_ROOM',
       payload: {
@@ -58,6 +58,12 @@ export const usePacketFactory = (ws: WebSocket | undefined) => {
     })
   }, [send])
 
+  const quitRoom = React.useCallback(() => {
+    send({
+      type: 'QUIT_ROOM'
+    })
+  }, [send])
+
   return {
     sendMessage,
     setUserName,
@@ -65,6 +71,7 @@ export const usePacketFactory = (ws: WebSocket | undefined) => {
     joinRoom,
     setVote,
     uncoverCards,
-    resetVoting
+    resetVoting,
+    quitRoom
   }
 };

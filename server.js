@@ -48,7 +48,7 @@ const sendRoomDataToAll = (room) => {
 };
 
 const sendError = (user, message) => {
-  console.log('send error', message);
+  console.log("send error", message);
   user.send(
     JSON.stringify({
       type: "ERROR_MESSAGE",
@@ -61,10 +61,10 @@ const sendSetUsername = (user) => {
   user.send(
     JSON.stringify({
       type: "SET_USERNAME",
-      payload: user.username
+      payload: user.username,
     })
   );
-}
+};
 
 wss.on("connection", (ws) => {
   console.log("Connected");
@@ -86,11 +86,31 @@ wss.on("connection", (ws) => {
   ws.on("message", (data) => {
     const packet = JSON.parse(data);
 
+    if (packet.type === "QUIT_ROOM") {
+      const joinedRoom = rooms[ws.roomName];
+      if (joinedRoom) {
+        ws.send(
+          JSON.stringify({
+            type: "ROOM_INFO",
+            payload: null,
+          })
+        );
+        const index = joinedRoom.users.findIndex((user) => user === ws);
+        joinedRoom.users.splice(index, 1);
+
+        if (joinedRoom.users.length === 0) {
+          delete rooms[ws.roomName];
+          return;
+        }
+        sendRoomDataToAll(joinedRoom);
+      }
+    }
+
     if (packet.type === "SET_USERNAME") {
       const username = packet.payload;
 
-      if(!username || username.length < 3) {
-        sendError(ws, 'Please provide username that is at least 3 chars long.');
+      if (!username || username.length < 3) {
+        sendError(ws, "Please provide username that is at least 3 chars long.");
         return;
       }
 
@@ -145,6 +165,11 @@ wss.on("connection", (ws) => {
 
     if (ws.username && packet.type === "CREATE_ROOM") {
       const { roomName, password } = packet.payload;
+
+      if (roomName.length < 3) {
+        sendError(ws, "Room name should have at least 3 characters.");
+        return;
+      }
 
       if (rooms[roomName] || rooms[ws.roomName]) {
         sendError(ws, "Room already exists!");

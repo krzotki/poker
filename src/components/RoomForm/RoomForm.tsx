@@ -1,6 +1,8 @@
 import styles from "./../../App.module.scss";
 import css from "./RoomForm.module.scss";
 import cx from "classnames";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faCircleArrowLeft } from "@fortawesome/free-solid-svg-icons";
 
 type PropsType = {
   setRoomName: (roomName: string) => void;
@@ -8,6 +10,7 @@ type PropsType = {
   setRoomPassword: (roomPassword: string) => void;
   handleCreateRoom: () => void;
   handleJoinRoom: () => void;
+  handleBackClick: () => void;
 };
 
 export const RoomForm = ({
@@ -16,9 +19,11 @@ export const RoomForm = ({
   roomName,
   setRoomName,
   setRoomPassword,
+  handleBackClick
 }: PropsType) => {
   return (
     <div className={cx(styles.usernameForm, css.gameForm)}>
+        <FontAwesomeIcon onClick={handleBackClick} className={styles.backButton} icon={faCircleArrowLeft} />
         <input
           onChange={(evt) => setRoomName(evt.target.value)}
           placeholder="Room name"
