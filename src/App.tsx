@@ -11,7 +11,7 @@ import { UsernameForm } from "./components/UsernameForm/UsernameForm";
 import { Router } from "react-router-dom";
 
 function App() {
-  const ws = useWebSocket();
+  const { ws, wsClosed } = useWebSocket();
   const {
     setUserName: sendSetUserName,
     createRoom,
@@ -19,7 +19,7 @@ function App() {
     setVote,
     resetVoting,
     uncoverCards,
-    quitRoom
+    quitRoom,
   } = usePacketFactory(ws);
 
   const [roomInfo, setRoomInfo] = React.useState<RoomInfo>();
@@ -56,7 +56,9 @@ function App() {
     <div className={styles.app}>
       {errorMessage && <ErrorPopup message={errorMessage} />}
       <p className={styles.title}>Planning Poker</p>
-      {roomInfo ? (
+      {wsClosed ? (
+        <h1>Disconnected. Please refresh the page</h1>
+      ) : roomInfo ? (
         <RoomView
           roomInfo={roomInfo}
           handleVote={setVote}
@@ -77,7 +79,7 @@ function App() {
           setRoomName={setRoomName}
           setRoomPassword={setRoomPassword}
           handleBackClick={() => {
-            setUsername('');
+            setUsername("");
             setHasSetUsername(false);
           }}
         />
