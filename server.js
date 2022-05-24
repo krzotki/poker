@@ -26,7 +26,7 @@ const prepareRoomToSend = (room) => {
     lockedVoting: room.lockedVoting,
     users: room.users.map((user) => ({
       name: user.username,
-      hasVoted: !!user.uservote,
+      hasVoted: user.uservote !== undefined,
       vote: room.cardsCovered ? null : user.uservote,
     })),
   };
@@ -95,11 +95,12 @@ wss.on("connection", (ws) => {
             payload: null,
           })
         );
+        ws.roomName = undefined;
         const index = joinedRoom.users.findIndex((user) => user === ws);
         joinedRoom.users.splice(index, 1);
 
         if (joinedRoom.users.length === 0) {
-          delete rooms[ws.roomName];
+          delete rooms[joinedRoom.roomName];
           return;
         }
         sendRoomDataToAll(joinedRoom);
@@ -139,7 +140,7 @@ wss.on("connection", (ws) => {
       const joinedRoom = rooms[ws.roomName];
       if (!joinedRoom || joinedRoom.lockedVoting) return;
 
-      const allVoted = !joinedRoom.users.find((user) => !user.uservote);
+      const allVoted = !joinedRoom.users.find((user) => user.uservote === undefined);
 
       if (allVoted) {
         joinedRoom.lockedVoting = true;
@@ -158,7 +159,7 @@ wss.on("connection", (ws) => {
 
       joinedRoom.lockedVoting = false;
       joinedRoom.cardsCovered = true;
-      joinedRoom.users.forEach((user) => (user.uservote = null));
+      joinedRoom.users.forEach((user) => (user.uservote = undefined));
 
       sendRoomDataToAll(joinedRoom);
     }
