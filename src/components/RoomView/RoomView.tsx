@@ -148,7 +148,8 @@ export const RoomView = ({
             );
           })}
       </div>
-      {/* <FontAwesomeIcon onClick={handleBackClick} className={styles.backButton} icon={faCircleArrowLeft} />
+      <FontAwesomeIcon onClick={handleBackClick} className={styles.backButton} icon={faCircleArrowLeft} />
+      {/* 
       <h1>Room name: {roomInfo.roomName}</h1>      
       */}
       {!roomInfo.lockedVoting && (

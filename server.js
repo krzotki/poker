@@ -95,11 +95,12 @@ wss.on("connection", (ws) => {
             payload: null,
           })
         );
+        ws.roomName = undefined;
         const index = joinedRoom.users.findIndex((user) => user === ws);
         joinedRoom.users.splice(index, 1);
 
         if (joinedRoom.users.length === 0) {
-          delete rooms[ws.roomName];
+          delete rooms[joinedRoom.roomName];
           return;
         }
         sendRoomDataToAll(joinedRoom);
