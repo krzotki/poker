@@ -39,7 +39,7 @@ export const usePacketFactory = (ws: WebSocket | undefined) => {
     })
   }, [send])
 
-  const setVote = React.useCallback((vote: number) => {
+  const setVote = React.useCallback((vote: number | undefined) => {
     send({
       type: 'SET_VOTE',
       payload: vote
