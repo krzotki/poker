@@ -107,7 +107,11 @@ export const RoomView = ({
   return (
     <div className={css.roomView}>
       <h2 className={css.averageScore}>
-        {!roomInfo.cardsCovered && <>Average vote: <strong>{averageVote.toFixed(2)}</strong></>}
+        {!roomInfo.cardsCovered && (
+          <>
+            Average vote: <strong>{averageVote.toFixed(2)}</strong>
+          </>
+        )}
       </h2>
 
       <div className={css.table} ref={(newRef) => setTableRef(newRef)}>
@@ -143,12 +147,17 @@ export const RoomView = ({
                   top: pos.y,
                 }}
               >
-                {user.name} {user.vote && <strong>{user.vote}</strong>}
+                {user.name}
+                {(user.vote || user.vote === 0) && <strong>{user.vote}</strong>}
               </div>
             );
           })}
       </div>
-      <FontAwesomeIcon onClick={handleBackClick} className={styles.backButton} icon={faCircleArrowLeft} />
+      <FontAwesomeIcon
+        onClick={handleBackClick}
+        className={styles.backButton}
+        icon={faCircleArrowLeft}
+      />
       {/* 
       <h1>Room name: {roomInfo.roomName}</h1>      
       */}
