@@ -1,74 +1,115 @@
 import * as React from "react";
 
 export const usePacketFactory = (ws: WebSocket | undefined) => {
-  const send = React.useCallback((packet: any) => {
-    ws?.send(JSON.stringify(packet));
-  }, [ws])
+  const [packetQueue, setPacketQueue] = React.useState<any[]>([]);
 
-  const sendMessage = React.useCallback((message: string) => {
-    send({
-      type: 'MESSAGE',
-      payload: message
-    });
-  }, [send]);
+  React.useEffect(() => {
+    if (!ws) {
+      return;
+    }
 
-  const setUserName = React.useCallback((username?: string) => {
-    send({
-      type: 'SET_USERNAME',
-      payload: username
-    })
-  }, [send])
+    ws.onopen = () => {
+      packetQueue.forEach((p) => ws.send(JSON.stringify(p)));
+      setPacketQueue([]);
+    };
 
-  const createRoom = React.useCallback((roomName?: string, password?: string) => {
-    send({
-      type: 'CREATE_ROOM',
-      payload: {
-        roomName,
-        password
+    return () => {
+      ws.onopen = null;
+    };
+  }, [ws, packetQueue]);
+
+  const send = React.useCallback(
+    (packet: any) => {
+      if (!ws) return;
+
+      if (ws.readyState === ws.OPEN) {
+        ws.send(JSON.stringify(packet));
+      } else {
+        setPacketQueue((q) => [...q, packet]);
       }
-    })
-  }, [send])
+    },
+    [ws]
+  );
 
-  const joinRoom = React.useCallback((roomName?: string, password?: string) => {
-    send({
-      type: 'JOIN_ROOM',
-      payload: {
-        roomName,
-        password
-      }
-    })
-  }, [send])
+  const sendMessage = React.useCallback(
+    (message: string) => {
+      send({
+        type: "MESSAGE",
+        payload: message,
+      });
+    },
+    [send]
+  );
 
-  const setVote = React.useCallback((vote: number | undefined) => {
-    send({
-      type: 'SET_VOTE',
-      payload: vote
-    })
-  }, [send])
+  const setUserName = React.useCallback(
+    (username?: string) => {
+      send({
+        type: "SET_USERNAME",
+        payload: username,
+      });
+    },
+    [send]
+  );
+
+  const createRoom = React.useCallback(
+    (roomName?: string, password?: string) => {
+      send({
+        type: "CREATE_ROOM",
+        payload: {
+          roomName,
+          password,
+        },
+      });
+    },
+    [send]
+  );
+
+  const joinRoom = React.useCallback(
+    (roomName?: string, password?: string) => {
+      send({
+        type: "JOIN_ROOM",
+        payload: {
+          roomName,
+          password,
+        },
+      });
+    },
+    [send]
+  );
+
+  const setVote = React.useCallback(
+    (vote: number | undefined) => {
+      send({
+        type: "SET_VOTE",
+        payload: vote,
+      });
+    },
+    [send]
+  );
 
   const uncoverCards = React.useCallback(() => {
     send({
-      type: 'UNCOVER_CARDS'
-    })
-  }, [send])
+      type: "UNCOVER_CARDS",
+    });
+  }, [send]);
 
   const resetVoting = React.useCallback(() => {
     send({
-      type: 'RESET_VOTING'
-    })
-  }, [send])
+      type: "RESET_VOTING",
+    });
+  }, [send]);
 
   const quitRoom = React.useCallback(() => {
     send({
-      type: 'QUIT_ROOM'
-    })
-  }, [send])
+      type: "QUIT_ROOM",
+    });
+  }, [send]);
 
   const sendPong = React.useCallback(() => {
     send({
-      type: 'PONG'
-    })
-  }, [send])
+      type: "PONG",
+    });
+  }, [send]);
 
   return {
     sendMessage,
@@ -79,6 +120,6 @@ export const usePacketFactory = (ws: WebSocket | undefined) => {
     uncoverCards,
     resetVoting,
     quitRoom,
-    sendPong
-  }
+    sendPong,
+  };
 };

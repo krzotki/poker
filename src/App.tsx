@@ -20,7 +20,7 @@ function App() {
     resetVoting,
     uncoverCards,
     quitRoom,
-    sendPong
+    sendPong,
   } = usePacketFactory(ws);
 
   const [roomInfo, setRoomInfo] = React.useState<RoomInfo>();
@@ -29,6 +29,13 @@ function App() {
   const [roomName, setRoomName] = React.useState<string>("room");
   const [roomPassword, setRoomPassword] = React.useState<string>();
   const { showError, errorMessage } = useErrorVisibility();
+
+  React.useEffect(() => {
+    const savedUser = localStorage.getItem("username");
+    if (savedUser) {
+      sendSetUserName(savedUser);
+    }
+  }, [sendSetUserName]);
 
   usePacketHandlers(ws, {
     MESSAGE: (data: any) => console.log("CLIENT MESSAGE", data),
@@ -43,6 +50,7 @@ function App() {
 
   const handleSetUsernameClick = React.useCallback(() => {
     sendSetUserName(username);
+    localStorage.setItem("username", username || "");
     // setRoomName(`${username}'s room`);
   }, [username, sendSetUserName]);
 
