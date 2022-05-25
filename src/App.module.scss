@@ -17,6 +17,7 @@
   height: 15%;
 }
 
+
 .usernameForm {
   position: relative;
   border-radius: 2em;
@@ -77,12 +78,40 @@
 .backButton {
   position: absolute;
   font-size: 2em;
-  left: 1em;
-  top: 1em;
+  left: 5%;
+  top: 2.5%;
   color: #7e7e7e;
   cursor: pointer;
 }
 
 .backButton:hover {
   color: rgb(24, 24, 24);
+}
+
+
+@media (max-width: 768px) {
+  .title {
+    font-size: 2em;
+  }
+  
+  .usernameForm button {
+    font-size: 0.9em;
+    padding: 0.75em;
+  }
+
+  .usernameForm {
+    width: 90%;
+    height: 60% !important;
+  }
+}
+
+
+@media (max-height: 1000px) {
+  .title {
+    font-size: 2em;
+  }
+
+  .usernameForm {
+    height: 60% !important;
+  }
 }

@@ -67,7 +67,13 @@ const sendSetUsername = (user) => {
 };
 
 wss.on("connection", (ws) => {
-  console.log("Connected");
+  setInterval(() => {
+    ws.send(
+      JSON.stringify({
+        type: "PING"
+      })
+    );
+  }, 30000)
 
   ws.on("close", () => {
     const joinedRoom = rooms[ws.roomName];

@@ -64,6 +64,12 @@ export const usePacketFactory = (ws: WebSocket | undefined) => {
     })
   }, [send])
 
+  const sendPong = React.useCallback(() => {
+    send({
+      type: 'PONG'
+    })
+  }, [send])
+
   return {
     sendMessage,
     setUserName,
@@ -72,6 +78,7 @@ export const usePacketFactory = (ws: WebSocket | undefined) => {
     setVote,
     uncoverCards,
     resetVoting,
-    quitRoom
+    quitRoom,
+    sendPong
   }
 };

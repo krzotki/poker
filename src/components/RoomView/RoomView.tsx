@@ -4,6 +4,7 @@ import cx from "classnames";
 import React from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faCircleArrowLeft } from "@fortawesome/free-solid-svg-icons";
+import { useTableResize } from "../../hooks/useTableResize";
 
 type User = {
   name: string;
@@ -56,7 +57,7 @@ export const RoomView = ({
   const [userVote, setUserVote] = React.useState<number>();
   const [timeCounter, setTimeCounter] = React.useState<number>(3);
 
-  const [tableRef, setTableRef] = React.useState<HTMLDivElement | null>();
+  const { tableRect, setTableRef } = useTableResize();
 
   const handleVoteClick = React.useCallback(
     (vote: number) => {
@@ -98,11 +99,6 @@ export const RoomView = ({
   const averageVote =
     roomInfo.users.reduce((prev, curr) => prev + (curr.vote || 0), 0) /
     roomInfo.users.length;
-
-  const tableRect = React.useMemo(
-    () => tableRef?.getBoundingClientRect(),
-    [tableRef]
-  );
 
   return (
     <div className={css.roomView}>
@@ -161,9 +157,10 @@ export const RoomView = ({
       {/* 
       <h1>Room name: {roomInfo.roomName}</h1>      
       */}
-      {!roomInfo.lockedVoting && (
-        <div className={css.votingOptions}>
-          {VOTING_OPTIONS.map((option) => (
+
+      <div className={css.votingOptions}>
+        {!roomInfo.lockedVoting &&
+          VOTING_OPTIONS.map((option) => (
             <button
               className={cx(css.voteOption, {
                 [css.selected]: userVote === option,
@@ -174,8 +171,7 @@ export const RoomView = ({
               {option}
             </button>
           ))}
-        </div>
-      )}
+      </div>
     </div>
   );
 };

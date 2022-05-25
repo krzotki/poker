@@ -20,6 +20,7 @@ function App() {
     resetVoting,
     uncoverCards,
     quitRoom,
+    sendPong
   } = usePacketFactory(ws);
 
   const [roomInfo, setRoomInfo] = React.useState<RoomInfo>();
@@ -37,6 +38,7 @@ function App() {
       showError(data);
     },
     SET_USERNAME: () => setHasSetUsername(true),
+    PING: sendPong,
   });
 
   const handleSetUsernameClick = React.useCallback(() => {
