@@ -77,6 +77,18 @@ export const usePacketFactory = (ws: WebSocket | undefined) => {
     [send]
   );
 
+  const joinRoomViaKey = React.useCallback(
+    (key: string) => {
+      send({
+        type: "JOIN_ROOM_VIA_KEY",
+        payload: {
+          key
+        },
+      });
+    },
+    [send]
+  );
+
   const setVote = React.useCallback(
     (vote: number | undefined) => {
       send({
@@ -121,5 +133,6 @@ export const usePacketFactory = (ws: WebSocket | undefined) => {
     resetVoting,
     quitRoom,
     sendPong,
+    joinRoomViaKey
   };
 };

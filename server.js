@@ -1,6 +1,7 @@
 const express = require("express");
 const http = require("http");
 const WebSocket = require("ws");
+const { v4 } = require("uuid");
 
 const app = express();
 const server = http.createServer(app);
@@ -29,13 +30,12 @@ const prepareRoomToSend = (room) => {
       hasVoted: user.uservote !== undefined,
       vote: room.cardsCovered ? null : user.uservote,
     })),
+    key: room.roomKey,
   };
 };
 
 const sendRoomDataToAll = (room) => {
   const roomToSend = prepareRoomToSend(room);
-
-  console.log(roomToSend);
 
   room.users.forEach((user) => {
     user.send(
@@ -70,10 +70,10 @@ wss.on("connection", (ws) => {
   setInterval(() => {
     ws.send(
       JSON.stringify({
-        type: "PING"
+        type: "PING",
       })
     );
-  }, 30000)
+  }, 30000);
 
   ws.on("close", () => {
     const joinedRoom = rooms[ws.roomName];
@@ -146,7 +146,9 @@ wss.on("connection", (ws) => {
       const joinedRoom = rooms[ws.roomName];
       if (!joinedRoom || joinedRoom.lockedVoting) return;
 
-      const allVoted = !joinedRoom.users.find((user) => user.uservote === undefined);
+      const allVoted = !joinedRoom.users.find(
+        (user) => user.uservote === undefined
+      );
 
       if (allVoted) {
         joinedRoom.lockedVoting = true;
@@ -185,20 +187,22 @@ wss.on("connection", (ws) => {
 
       ws.roomName = roomName;
 
+      const key = v4();
+      console.log({ key });
+
       const newRoom = {
         roomName,
         password,
         cardsCovered: true,
         lockedVoting: false,
         users: [ws],
+        roomKey: key,
       };
 
       rooms[roomName] = newRoom;
 
       sendRoomDataToAll(newRoom);
     }
-
-    console.log(packet, ws.username);
 
     if (ws.username && packet.type === "JOIN_ROOM") {
       const { roomName, password } = packet.payload;
@@ -221,6 +225,16 @@ wss.on("connection", (ws) => {
       ws.roomName = roomName;
       rooms[roomName].users.push(ws);
       sendRoomDataToAll(rooms[roomName]);
+    }
+
+    if (ws.username && packet.type === "JOIN_ROOM_VIA_KEY") {
+      const { key } = packet.payload;
+      const room = Object.values(rooms).find((room) => room.roomKey === key);
+      if (room) {
+        ws.roomName = room.roomName;
+        rooms[room.roomName].users.push(ws);
+        sendRoomDataToAll(rooms[room.roomName]);
+      }
     }
 
     if (packet.type === "MESSAGE") {

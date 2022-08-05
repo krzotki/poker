@@ -10,6 +10,13 @@ import { ErrorPopup } from "./components/ErrorPopup/ErrorPopup";
 import { UsernameForm } from "./components/UsernameForm/UsernameForm";
 import { Router } from "react-router-dom";
 
+const getRoomKeyFromUrl = () => {
+  const urlSearchParams = new URLSearchParams(window.location.search);
+  const params = Object.fromEntries(urlSearchParams.entries());
+  const roomKey = params.roomKey;
+  return roomKey;
+};
+
 function App() {
   const { ws, wsClosed } = useWebSocket();
   const {
@@ -21,6 +28,7 @@ function App() {
     uncoverCards,
     quitRoom,
     sendPong,
+    joinRoomViaKey
   } = usePacketFactory(ws);
 
   const [roomInfo, setRoomInfo] = React.useState<RoomInfo>();
@@ -29,6 +37,13 @@ function App() {
   const [roomName, setRoomName] = React.useState<string>("room");
   const [roomPassword, setRoomPassword] = React.useState<string>();
   const { showError, errorMessage } = useErrorVisibility();
+
+  React.useEffect(() => {
+    const roomKey = getRoomKeyFromUrl();
+    if(roomKey && hasSetUsername) {
+      joinRoomViaKey(roomKey);
+    }
+  }, [joinRoomViaKey, hasSetUsername])
 
   React.useEffect(() => {
     const savedUser = localStorage.getItem("username");
