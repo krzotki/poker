@@ -27,7 +27,7 @@ type PropsType = {
   handleBackClick: () => void;
 };
 
-const VOTING_OPTIONS = [0, 0.5, 1, 2, 3, 5, 8, 13];
+const VOTING_OPTIONS = [0, 0.5, 1, 2, 3, 5, 8, 13, 21];
 
 const getCardPosition = (
   index: number,
