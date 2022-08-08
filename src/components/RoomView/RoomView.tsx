@@ -5,6 +5,7 @@ import React from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faCircleArrowLeft } from "@fortawesome/free-solid-svg-icons";
 import { useTableResize } from "../../hooks/useTableResize";
+import { useCopiedToClipBoardInfo } from "../../hooks/useCopiedToClipboardInfo";
 
 type User = {
   name: string;
@@ -17,6 +18,7 @@ export type RoomInfo = {
   users: User[];
   lockedVoting: boolean;
   cardsCovered: boolean;
+  key: string;
 };
 
 type PropsType = {
@@ -27,7 +29,7 @@ type PropsType = {
   handleBackClick: () => void;
 };
 
-const VOTING_OPTIONS = [0, 0.5, 1, 2, 3, 5, 8, 13, 21];
+const VOTING_OPTIONS = [0, 0.5, 1, 2, 3, 5, 8, 13];
 
 const getCardPosition = (
   index: number,
@@ -55,6 +57,7 @@ export const RoomView = ({
   handleBackClick,
 }: PropsType) => {
   const [userVote, setUserVote] = React.useState<number>();
+  const [sharedRoom, setSharedRoom] = React.useState(false);
   const [timeCounter, setTimeCounter] = React.useState<number>(3);
 
   const { tableRect, setTableRef } = useTableResize();
@@ -92,6 +95,15 @@ export const RoomView = ({
     }
   }, [roomInfo.lockedVoting, roomInfo.cardsCovered]);
 
+  const { showCopyInfo, visibleCopyInfo } = useCopiedToClipBoardInfo();
+
+  const shareLink = `${window.location.href}?roomKey=${roomInfo.key}`;
+
+  const handleShareInputClick = React.useCallback(() => {
+    navigator.clipboard.writeText(shareLink);
+    showCopyInfo();
+  }, [shareLink, showCopyInfo]);
+
   const everyoneVoted = !roomInfo.users.find((user) => !user.hasVoted);
 
   const showCounter = roomInfo.lockedVoting && roomInfo.cardsCovered;
@@ -102,6 +114,15 @@ export const RoomView = ({
 
   return (
     <div className={css.roomView}>
+      <div className={css.shareContainer}>
+        <button onClick={() => setSharedRoom(true)} className={css.shareButton}>
+          Share room
+        </button>
+        {sharedRoom && (
+          <input value={shareLink} onClick={handleShareInputClick} readOnly />
+        )}
+        {visibleCopyInfo && <p>Link copied to clipboard!</p>}
+      </div>
       <h2 className={css.averageScore}>
         {!roomInfo.cardsCovered && (
           <>

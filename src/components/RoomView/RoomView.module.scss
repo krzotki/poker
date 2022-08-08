@@ -181,3 +181,37 @@
     font-size: 0.9em;
   }
 }
+
+.shareContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+}
+
+.shareButton {
+  padding: 0.5em;
+  border-radius: 0.5em;
+  outline: none;
+  font-size: 1.1em;
+  border: solid 1px;
+  color: #3535d3;
+  background-color: #ffffff;
+  cursor: pointer;
+  margin-bottom: 0.5em;
+}
+
+.shareContainer input {
+  padding: 0.5em;
+  width: 400px;
+  cursor: pointer;
+  border-radius: 0.5em;
+  border: solid 1px;
+}
+
+.shareContainer p {
+  position: absolute;
+  bottom: -3em;
+  font-size: 1.25em;
+  color: #00ffa2;
+}
