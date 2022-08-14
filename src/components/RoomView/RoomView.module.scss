@@ -1,7 +1,10 @@
 .voteOption {
   border-radius: 5px;
-  padding: 1em 1.25em;
+  padding: 1em;
   margin: 0.5em;
+  box-sizing: border-box;
+  width: 3.7em;
+  height: 3.7em;
   cursor: pointer;
   background-color: white;
   font-family: "Chakra Petch", sans-serif;
@@ -52,7 +55,7 @@
 
 .roomView {
   width: 100%;
-  height: 85%;
+  height: 88%;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
@@ -68,6 +71,7 @@
   box-sizing: border-box;
   justify-content: center;
   margin: 0;
+  margin-bottom: 2em;
 }
 
 .averageScore strong {

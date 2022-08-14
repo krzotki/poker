@@ -1,0 +1,112 @@
+.container .bubble {
+  width: 70px;
+  height: 50px;
+  line-height: 50px;
+}
+.bubble {
+  width: 100%;
+  height: 100%;
+  background: #4bb5c1;
+  border-radius: 50%;
+  line-height: inherit;
+  text-align: center;
+  position: relative;
+}
+.bubble::before,
+.bubble::after {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  display: block;
+  content: "";
+  position: absolute;
+  top: 0;
+}
+.bubble::before {
+  background: #78c8d1;
+  transform: skew(4deg);
+  z-index: -1;
+}
+.bubble::after {
+  background: #388891;
+  transform: skew(-3deg);
+  z-index: -2;
+}
+.bubble > div {
+  color: #fff;
+  font-family: sans-serif;
+  font-weight: bold;
+  line-height: inherit;
+  font-size: 10pt;
+  text-shadow: 1px 3px 0 #388891;
+  display: inline-block;
+}
+.bubble > div.char1 {
+  transform: rotate(-10deg);
+}
+.bubble > div.char3 {
+  transform: rotate(10deg);
+}
+.bubble > div.char2 {
+  font-size: 20pt;
+}
+.bubble .triangle {
+  width: 0px;
+  height: 0px;
+  border-top: 7px solid transparent;
+  border-bottom: 18px solid transparent;
+  border-left: 30px solid #4bb5c1;
+  position: absolute;
+  top: 36px;
+  left: 15px;
+  z-index: -3;
+  transform: rotate(9deg);
+}
+@keyframes sleeping {
+  0% {
+    transform: scale(1, 1);
+  }
+  50% {
+    transform: scale(0.9, 0.9);
+  }
+  100% {
+    transform: scale(1, 1);
+  }
+}
+.container {
+  float: left;
+  animation: sleeping 3s linear infinite;
+  top: -30%;
+  right: -40%;
+  position: absolute;
+  cursor: default;
+}
+
+.clickable {
+  cursor: pointer;
+}
+
+.container *::selection {
+  color: #fff;
+  background: transparent;
+}
+
+.container .description {
+  position: absolute;
+  width: 100px;
+  top: -2em;
+  font-size: 12pt;
+  color: rgb(104, 104, 104);
+  text-shadow: 1px 1px 3px #ffffff;
+  display: none;
+}
+
+.container:hover .description {
+  display: initial;
+}
+
+@media (max-width: 768px) {
+  .container .bubble {
+    transform: scale(0.75);
+  }
+}

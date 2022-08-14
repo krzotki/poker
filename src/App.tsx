@@ -9,6 +9,7 @@ import { useErrorVisibility } from "./hooks/useErrorVisibility";
 import { ErrorPopup } from "./components/ErrorPopup/ErrorPopup";
 import { UsernameForm } from "./components/UsernameForm/UsernameForm";
 import { Router } from "react-router-dom";
+import { useAudio } from "./hooks/useAudio";
 
 const getRoomKeyFromUrl = () => {
   const urlSearchParams = new URLSearchParams(window.location.search);
@@ -28,7 +29,8 @@ function App() {
     uncoverCards,
     quitRoom,
     sendPong,
-    joinRoomViaKey
+    joinRoomViaKey,
+    wakeUserUp
   } = usePacketFactory(ws);
 
   const [roomInfo, setRoomInfo] = React.useState<RoomInfo>();
@@ -52,6 +54,8 @@ function App() {
     }
   }, [sendSetUserName]);
 
+  const wakeUpAudio = useAudio('wakeup.mp3');
+
   usePacketHandlers(ws, {
     MESSAGE: (data: any) => console.log("CLIENT MESSAGE", data),
     ROOM_INFO: setRoomInfo,
@@ -61,6 +65,7 @@ function App() {
     },
     SET_USERNAME: () => setHasSetUsername(true),
     PING: sendPong,
+    WAKE_UP: () => wakeUpAudio?.play()
   });
 
   const handleSetUsernameClick = React.useCallback(() => {
@@ -77,6 +82,7 @@ function App() {
     joinRoom(roomName, roomPassword);
   }, [roomName, roomPassword, joinRoom]);
 
+
   return (
     <div className={styles.app}>
       {errorMessage && <ErrorPopup message={errorMessage} />}
@@ -90,6 +96,7 @@ function App() {
           handleUncoverCards={uncoverCards}
           handleResetVoting={resetVoting}
           handleBackClick={quitRoom}
+          handleWakeUpClick={wakeUserUp}
         />
       ) : !hasSetUsername ? (
         <UsernameForm

@@ -82,7 +82,7 @@ export const usePacketFactory = (ws: WebSocket | undefined) => {
       send({
         type: "JOIN_ROOM_VIA_KEY",
         payload: {
-          key
+          key,
         },
       });
     },
@@ -123,6 +123,18 @@ export const usePacketFactory = (ws: WebSocket | undefined) => {
     });
   }, [send]);
 
+  const wakeUserUp = React.useCallback(
+    (id: string) => {
+      send({
+        type: "WAKE_USER_UP",
+        payload: {
+          id,
+        },
+      });
+    },
+    [send]
+  );
+
   return {
     sendMessage,
     setUserName,
@@ -133,6 +145,7 @@ export const usePacketFactory = (ws: WebSocket | undefined) => {
     resetVoting,
     quitRoom,
     sendPong,
-    joinRoomViaKey
+    joinRoomViaKey,
+    wakeUserUp,
   };
 };

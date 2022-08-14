@@ -21,8 +21,11 @@ const wss = new ws.Server({ server });
 
 type UserType = ws.WebSocket & {
   username: string;
+  idleTimeout: NodeJS.Timeout;
+  isIdling: boolean;
   uservote?: number;
   roomName?: string;
+  userId: string;
 };
 
 type RoomType = {
@@ -36,28 +39,33 @@ type RoomType = {
 
 const rooms: Record<string, RoomType> = {};
 
-const prepareRoomToSend = (room: RoomType) => {
+const prepareRoomToSend = (room: RoomType, user: UserType) => {
   return {
     roomName: room.roomName,
     cardsCovered: room.cardsCovered,
     lockedVoting: room.lockedVoting,
     users: room.users.map((user) => ({
+      id: user.userId,
       name: user.username,
       hasVoted: user.uservote !== undefined,
       vote: room.cardsCovered ? null : user.uservote,
+      isIdling: user.isIdling,
     })),
     key: room.roomKey,
   };
 };
 
-const sendRoomDataToAll = (room: RoomType) => {
-  const roomToSend = prepareRoomToSend(room);
+const sendRoomDataToAll = (room: RoomType, user: UserType) => {
+  const roomToSend = prepareRoomToSend(room, user);
 
   room.users.forEach((user) => {
     user.send(
       JSON.stringify({
         type: "ROOM_INFO",
-        payload: roomToSend,
+        payload: {
+          ...roomToSend,
+          userId: user.userId,
+        },
       })
     );
   });
@@ -82,7 +90,19 @@ const sendSetUsername = (user: UserType) => {
   );
 };
 
+const sendWakeUp = (user: UserType) => {
+  user.send(
+    JSON.stringify({
+      type: "WAKE_UP",
+    })
+  );
+};
+
+const IDLING_TIMEOUT = 10000;
+
 wss.on("connection", (ws: UserType) => {
+  ws.userId = v4();
+
   setInterval(() => {
     ws.send(
       JSON.stringify({
@@ -104,12 +124,32 @@ wss.on("connection", (ws: UserType) => {
         delete rooms[ws.roomName];
         return;
       }
-      sendRoomDataToAll(joinedRoom);
+      sendRoomDataToAll(joinedRoom, ws);
     }
   });
 
   ws.on("message", (data: string) => {
     const packet = JSON.parse(data);
+
+    if (packet.type !== "PONG") {
+      ws.isIdling = false;
+      if (ws.roomName) {
+        sendRoomDataToAll(rooms[ws.roomName], ws);
+      }
+      if (ws.idleTimeout) {
+        clearTimeout(ws.idleTimeout);
+      }
+      ws.idleTimeout = setTimeout(() => {
+        if (ws.uservote) {
+          return;
+        }
+
+        ws.isIdling = true;
+        if (ws.roomName) {
+          sendRoomDataToAll(rooms[ws.roomName], ws);
+        }
+      }, IDLING_TIMEOUT);
+    }
 
     if (packet.type === "QUIT_ROOM") {
       const joinedRoom = ws.roomName && rooms[ws.roomName];
@@ -128,7 +168,7 @@ wss.on("connection", (ws: UserType) => {
           delete rooms[joinedRoom.roomName];
           return;
         }
-        sendRoomDataToAll(joinedRoom);
+        sendRoomDataToAll(joinedRoom, ws);
       }
     }
 
@@ -144,7 +184,7 @@ wss.on("connection", (ws: UserType) => {
 
       const joinedRoom = ws.roomName && rooms[ws.roomName];
       if (joinedRoom) {
-        sendRoomDataToAll(joinedRoom);
+        sendRoomDataToAll(joinedRoom, ws);
       }
 
       sendSetUsername(ws);
@@ -157,7 +197,7 @@ wss.on("connection", (ws: UserType) => {
 
       const joinedRoom = ws.roomName && rooms[ws.roomName];
       if (joinedRoom) {
-        sendRoomDataToAll(joinedRoom);
+        sendRoomDataToAll(joinedRoom, ws);
       }
     }
 
@@ -171,11 +211,11 @@ wss.on("connection", (ws: UserType) => {
 
       if (allVoted) {
         joinedRoom.lockedVoting = true;
-        sendRoomDataToAll(joinedRoom);
+        sendRoomDataToAll(joinedRoom, ws);
 
         setTimeout(() => {
           joinedRoom.cardsCovered = false;
-          sendRoomDataToAll(joinedRoom);
+          sendRoomDataToAll(joinedRoom, ws);
         }, 3000);
       }
     }
@@ -188,7 +228,7 @@ wss.on("connection", (ws: UserType) => {
       joinedRoom.cardsCovered = true;
       joinedRoom.users.forEach((user) => (user.uservote = undefined));
 
-      sendRoomDataToAll(joinedRoom);
+      sendRoomDataToAll(joinedRoom, ws);
     }
 
     if (ws.username && packet.type === "CREATE_ROOM") {
@@ -220,7 +260,7 @@ wss.on("connection", (ws: UserType) => {
 
       rooms[roomName] = newRoom;
 
-      sendRoomDataToAll(newRoom);
+      sendRoomDataToAll(newRoom, ws);
     }
 
     if (ws.username && packet.type === "JOIN_ROOM") {
@@ -243,7 +283,7 @@ wss.on("connection", (ws: UserType) => {
 
       ws.roomName = roomName;
       rooms[roomName].users.push(ws);
-      sendRoomDataToAll(rooms[roomName]);
+      sendRoomDataToAll(rooms[roomName], ws);
     }
 
     if (ws.username && packet.type === "JOIN_ROOM_VIA_KEY") {
@@ -252,7 +292,18 @@ wss.on("connection", (ws: UserType) => {
       if (room) {
         ws.roomName = room.roomName;
         rooms[room.roomName].users.push(ws);
-        sendRoomDataToAll(rooms[room.roomName]);
+        sendRoomDataToAll(rooms[room.roomName], ws);
+      }
+    }
+
+    if (packet.type === "WAKE_USER_UP") {
+      const room = ws.roomName && rooms[ws.roomName];
+      if (room) {
+        const { id } = packet.payload;
+        const user = room.users.find((user) => user.userId === id);
+        if (user) {
+          sendWakeUp(user);
+        }
       }
     }
 

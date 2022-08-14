@@ -1,5 +1,6 @@
 import css from "./RoomView.module.scss";
 import styles from "../../App.module.scss";
+import sleepingStyles from "./sleepingStyles.module.scss";
 import cx from "classnames";
 import React from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -11,6 +12,8 @@ type User = {
   name: string;
   vote: number | undefined | null;
   hasVoted: boolean;
+  isIdling: boolean;
+  id: string;
 };
 
 export type RoomInfo = {
@@ -19,6 +22,7 @@ export type RoomInfo = {
   lockedVoting: boolean;
   cardsCovered: boolean;
   key: string;
+  userId: string;
 };
 
 type PropsType = {
@@ -27,6 +31,7 @@ type PropsType = {
   handleUncoverCards: () => void;
   handleResetVoting: () => void;
   handleBackClick: () => void;
+  handleWakeUpClick: (id: string) => void;
 };
 
 const VOTING_OPTIONS = [0, 0.5, 1, 2, 3, 5, 8, 13];
@@ -55,6 +60,7 @@ export const RoomView = ({
   handleUncoverCards,
   handleResetVoting,
   handleBackClick,
+  handleWakeUpClick,
 }: PropsType) => {
   const [userVote, setUserVote] = React.useState<number>();
   const [sharedRoom, setSharedRoom] = React.useState(false);
@@ -165,6 +171,30 @@ export const RoomView = ({
                 }}
               >
                 {user.name}
+                {user.isIdling && (
+                  <div
+                    onClick={() => {
+                      if (roomInfo.userId !== user.id) {
+                        handleWakeUpClick(user.id);
+                      }
+                    }}
+                    className={cx(sleepingStyles.container, {
+                      [sleepingStyles.clickable]: roomInfo.userId !== user.id,
+                    })}
+                  >
+                    <div className={sleepingStyles.bubble}>
+                      {roomInfo.userId !== user.id && (
+                        <div className={sleepingStyles.description}>
+                          Wake up!
+                        </div>
+                      )}
+                      <div className={sleepingStyles.char1}>Z</div>
+                      <div className={sleepingStyles.char2}>Z</div>
+                      <div className={sleepingStyles.char3}>Z</div>
+                      <div className={sleepingStyles.triangle}></div>
+                    </div>
+                  </div>
+                )}
                 {(user.vote || user.vote === 0) && <strong>{user.vote}</strong>}
               </div>
             );

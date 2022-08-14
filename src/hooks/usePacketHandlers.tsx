@@ -1,6 +1,12 @@
 import * as React from "react";
 
-type PacketType = "MESSAGE" | 'ROOM_INFO' | 'ERROR_MESSAGE' | 'SET_USERNAME' | 'PING';
+type PacketType =
+  | "MESSAGE"
+  | "ROOM_INFO"
+  | "ERROR_MESSAGE"
+  | "SET_USERNAME"
+  | "PING" 
+  | "WAKE_UP";
 
 export const usePacketHandlers = (
   ws: WebSocket | undefined,
