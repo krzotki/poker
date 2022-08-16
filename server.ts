@@ -13,8 +13,10 @@ app.get("/", function (req, res) {
 app.use("/", express.static(__dirname + "/build/"));
 
 server.listen(process.env.PORT || 8080, () => {
-  const address = server.address();
-  console.log(`Server started`);
+  const address = server.address() as {
+    port: number;
+  };
+  console.log(`Server started at ${address.port}`);
 });
 
 const wss = new ws.Server({ server });

@@ -23,7 +23,7 @@ app.get("/", function (req, res) {
 app.use("/", express.static(__dirname + "/build/"));
 server.listen(process.env.PORT || 8080, function () {
     var address = server.address();
-    console.log("Server started");
+    console.log("Server started at ".concat(address.address, ":").concat(address.port));
 });
 var wss = new ws.Server({ server: server });
 var rooms = {};
