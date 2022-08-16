@@ -27,27 +27,30 @@ server.listen(process.env.PORT || 8080, function () {
 });
 var wss = new ws.Server({ server: server });
 var rooms = {};
-var prepareRoomToSend = function (room, user) {
+var prepareRoomToSend = function (room) {
     return {
         roomName: room.roomName,
         cardsCovered: room.cardsCovered,
         lockedVoting: room.lockedVoting,
-        users: room.users.map(function (user) { return ({
-            id: user.userId,
-            name: user.username,
-            hasVoted: user.uservote !== undefined,
-            vote: room.cardsCovered ? null : user.uservote,
-            isIdling: user.isIdling
-        }); }),
+        users: room.users.map(function (_a) {
+            var userData = _a.userData;
+            return ({
+                id: userData.userId,
+                name: userData.username,
+                hasVoted: userData.uservote !== undefined,
+                vote: room.cardsCovered ? null : userData.uservote,
+                isIdling: userData.isIdling
+            });
+        }),
         key: room.roomKey
     };
 };
-var sendRoomDataToAll = function (room, user) {
-    var roomToSend = prepareRoomToSend(room, user);
+var sendRoomDataToAll = function (room) {
+    var roomToSend = prepareRoomToSend(room);
     room.users.forEach(function (user) {
         user.send(JSON.stringify({
             type: "ROOM_INFO",
-            payload: __assign(__assign({}, roomToSend), { userId: user.userId })
+            payload: __assign(__assign({}, roomToSend), { userId: user.userData.userId })
         }));
     });
 };
@@ -61,7 +64,7 @@ var sendError = function (user, message) {
 var sendSetUsername = function (user) {
     user.send(JSON.stringify({
         type: "SET_USERNAME",
-        payload: user.username
+        payload: user.userData.username
     }));
 };
 var sendWakeUp = function (user) {
@@ -70,63 +73,70 @@ var sendWakeUp = function (user) {
     }));
 };
 var IDLING_TIMEOUT = 10000;
+var setIdleTimeout = function (ws) {
+    var userData = ws.userData;
+    userData.isIdling = false;
+    if (userData.roomName) {
+        sendRoomDataToAll(rooms[userData.roomName]);
+    }
+    if (userData.idleTimeout) {
+        clearTimeout(userData.idleTimeout);
+    }
+    userData.idleTimeout = setTimeout(function () {
+        if (userData.uservote) {
+            return;
+        }
+        userData.isIdling = true;
+        if (userData.roomName) {
+            sendRoomDataToAll(rooms[userData.roomName]);
+        }
+    }, IDLING_TIMEOUT);
+};
 wss.on("connection", function (ws) {
-    ws.userId = (0, uuid_1.v4)();
+    ws.userData = {
+        userId: (0, uuid_1.v4)(),
+        isIdling: false
+    };
     setInterval(function () {
         ws.send(JSON.stringify({
             type: "PING"
         }));
     }, 30000);
     ws.on("close", function () {
-        if (!ws.roomName) {
+        if (!ws.userData.roomName) {
             return;
         }
-        var joinedRoom = rooms[ws.roomName];
+        var joinedRoom = rooms[ws.userData.roomName];
         if (joinedRoom) {
-            var index = joinedRoom.users.findIndex(function (user) { return user === ws; });
+            var index = joinedRoom.users.findIndex(function (user) { return user.userData.userId === ws.userData.userId; });
             joinedRoom.users.splice(index, 1);
             if (joinedRoom.users.length === 0) {
-                delete rooms[ws.roomName];
+                delete rooms[ws.userData.roomName];
                 return;
             }
-            sendRoomDataToAll(joinedRoom, ws);
+            sendRoomDataToAll(joinedRoom);
         }
     });
     ws.on("message", function (data) {
         var packet = JSON.parse(data);
         if (packet.type !== "PONG") {
-            ws.isIdling = false;
-            if (ws.roomName) {
-                sendRoomDataToAll(rooms[ws.roomName], ws);
-            }
-            if (ws.idleTimeout) {
-                clearTimeout(ws.idleTimeout);
-            }
-            ws.idleTimeout = setTimeout(function () {
-                if (ws.uservote) {
-                    return;
-                }
-                ws.isIdling = true;
-                if (ws.roomName) {
-                    sendRoomDataToAll(rooms[ws.roomName], ws);
-                }
-            }, IDLING_TIMEOUT);
+            setIdleTimeout(ws);
         }
         if (packet.type === "QUIT_ROOM") {
-            var joinedRoom = ws.roomName && rooms[ws.roomName];
+            var joinedRoom = ws.userData.roomName && rooms[ws.userData.roomName];
             if (joinedRoom) {
                 ws.send(JSON.stringify({
                     type: "ROOM_INFO",
                     payload: null
                 }));
-                ws.roomName = undefined;
-                var index = joinedRoom.users.findIndex(function (user) { return user === ws; });
+                ws.userData.roomName = undefined;
+                var index = joinedRoom.users.findIndex(function (user) { return user.userData.userId === ws.userData.userId; });
                 joinedRoom.users.splice(index, 1);
                 if (joinedRoom.users.length === 0) {
                     delete rooms[joinedRoom.roomName];
                     return;
                 }
-                sendRoomDataToAll(joinedRoom, ws);
+                sendRoomDataToAll(joinedRoom);
             }
         }
         if (packet.type === "SET_USERNAME") {
@@ -135,55 +145,59 @@ wss.on("connection", function (ws) {
                 sendError(ws, "Please provide username that is at least 3 chars long.");
                 return;
             }
-            ws.username = username;
-            var joinedRoom = ws.roomName && rooms[ws.roomName];
+            ws.userData.username = username;
+            var joinedRoom = ws.userData.roomName && rooms[ws.userData.roomName];
             if (joinedRoom) {
-                sendRoomDataToAll(joinedRoom, ws);
+                sendRoomDataToAll(joinedRoom);
             }
             sendSetUsername(ws);
         }
         if (packet.type === "SET_VOTE") {
             var vote = packet.payload;
-            ws.uservote = vote;
-            var joinedRoom = ws.roomName && rooms[ws.roomName];
+            ws.userData.uservote = vote;
+            var joinedRoom = ws.userData.roomName && rooms[ws.userData.roomName];
             if (joinedRoom) {
-                sendRoomDataToAll(joinedRoom, ws);
+                sendRoomDataToAll(joinedRoom);
             }
         }
         if (packet.type === "UNCOVER_CARDS") {
-            var joinedRoom_1 = ws.roomName && rooms[ws.roomName];
+            var joinedRoom_1 = ws.userData.roomName && rooms[ws.userData.roomName];
             if (!joinedRoom_1 || joinedRoom_1.lockedVoting)
                 return;
-            var allVoted = !joinedRoom_1.users.find(function (user) { return user.uservote === undefined; });
+            var allVoted = !joinedRoom_1.users.find(function (user) { return user.userData.uservote === undefined; });
             if (allVoted) {
                 joinedRoom_1.lockedVoting = true;
-                sendRoomDataToAll(joinedRoom_1, ws);
+                sendRoomDataToAll(joinedRoom_1);
                 setTimeout(function () {
                     joinedRoom_1.cardsCovered = false;
-                    sendRoomDataToAll(joinedRoom_1, ws);
+                    sendRoomDataToAll(joinedRoom_1);
                 }, 3000);
             }
         }
         if (packet.type === "RESET_VOTING") {
-            var joinedRoom = ws.roomName && rooms[ws.roomName];
+            var joinedRoom = ws.userData.roomName && rooms[ws.userData.roomName];
             if (!joinedRoom || joinedRoom.cardsCovered)
                 return;
             joinedRoom.lockedVoting = false;
             joinedRoom.cardsCovered = true;
-            joinedRoom.users.forEach(function (user) { return (user.uservote = undefined); });
-            sendRoomDataToAll(joinedRoom, ws);
+            joinedRoom.users.forEach(function (user) {
+                user.userData.uservote = undefined;
+                setIdleTimeout(user);
+            });
+            sendRoomDataToAll(joinedRoom);
         }
-        if (ws.username && packet.type === "CREATE_ROOM") {
+        if (ws.userData.username && packet.type === "CREATE_ROOM") {
             var _a = packet.payload, roomName = _a.roomName, password = _a.password;
             if (roomName.length < 3) {
                 sendError(ws, "Room name should have at least 3 characters.");
                 return;
             }
-            if (rooms[roomName] || (ws.roomName && rooms[ws.roomName])) {
+            if (rooms[roomName] ||
+                (ws.userData.roomName && rooms[ws.userData.roomName])) {
                 sendError(ws, "Room already exists!");
                 return;
             }
-            ws.roomName = roomName;
+            ws.userData.roomName = roomName;
             var key = (0, uuid_1.v4)();
             console.log({ key: key });
             var newRoom = {
@@ -195,9 +209,9 @@ wss.on("connection", function (ws) {
                 roomKey: key
             };
             rooms[roomName] = newRoom;
-            sendRoomDataToAll(newRoom, ws);
+            sendRoomDataToAll(newRoom);
         }
-        if (ws.username && packet.type === "JOIN_ROOM") {
+        if (ws.userData.username && packet.type === "JOIN_ROOM") {
             var _b = packet.payload, roomName = _b.roomName, password = _b.password;
             if (!rooms[roomName]) {
                 sendError(ws, "Room does not exist!");
@@ -207,28 +221,28 @@ wss.on("connection", function (ws) {
                 sendError(ws, "Incorrect room password!");
                 return;
             }
-            if (ws.roomName === roomName) {
+            if (ws.userData.roomName === roomName) {
                 sendError(ws, "You have already joined this room!");
                 return;
             }
-            ws.roomName = roomName;
+            ws.userData.roomName = roomName;
             rooms[roomName].users.push(ws);
-            sendRoomDataToAll(rooms[roomName], ws);
+            sendRoomDataToAll(rooms[roomName]);
         }
-        if (ws.username && packet.type === "JOIN_ROOM_VIA_KEY") {
+        if (ws.userData.username && packet.type === "JOIN_ROOM_VIA_KEY") {
             var key_1 = packet.payload.key;
             var room = Object.values(rooms).find(function (room) { return room.roomKey === key_1; });
             if (room) {
-                ws.roomName = room.roomName;
+                ws.userData.roomName = room.roomName;
                 rooms[room.roomName].users.push(ws);
-                sendRoomDataToAll(rooms[room.roomName], ws);
+                sendRoomDataToAll(rooms[room.roomName]);
             }
         }
         if (packet.type === "WAKE_USER_UP") {
-            var room = ws.roomName && rooms[ws.roomName];
+            var room = ws.userData.roomName && rooms[ws.userData.roomName];
             if (room) {
                 var id_1 = packet.payload.id;
-                var user = room.users.find(function (user) { return user.userId === id_1; });
+                var user = room.users.find(function (user) { return user.userData.userId === id_1; });
                 if (user) {
                     sendWakeUp(user);
                 }

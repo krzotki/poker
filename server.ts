@@ -20,12 +20,14 @@ server.listen(process.env.PORT || 8080, () => {
 const wss = new ws.Server({ server });
 
 type UserType = ws.WebSocket & {
-  username: string;
-  idleTimeout: NodeJS.Timeout;
-  isIdling: boolean;
-  uservote?: number;
-  roomName?: string;
-  userId: string;
+  userData: {
+    username?: string;
+    idleTimeout?: NodeJS.Timeout;
+    isIdling: boolean;
+    uservote?: number;
+    roomName?: string;
+    userId: string;
+  };
 };
 
 type RoomType = {
@@ -39,24 +41,24 @@ type RoomType = {
 
 const rooms: Record<string, RoomType> = {};
 
-const prepareRoomToSend = (room: RoomType, user: UserType) => {
+const prepareRoomToSend = (room: RoomType) => {
   return {
     roomName: room.roomName,
     cardsCovered: room.cardsCovered,
     lockedVoting: room.lockedVoting,
-    users: room.users.map((user) => ({
-      id: user.userId,
-      name: user.username,
-      hasVoted: user.uservote !== undefined,
-      vote: room.cardsCovered ? null : user.uservote,
-      isIdling: user.isIdling,
+    users: room.users.map(({ userData }) => ({
+      id: userData.userId,
+      name: userData.username,
+      hasVoted: userData.uservote !== undefined,
+      vote: room.cardsCovered ? null : userData.uservote,
+      isIdling: userData.isIdling,
     })),
     key: room.roomKey,
   };
 };
 
-const sendRoomDataToAll = (room: RoomType, user: UserType) => {
-  const roomToSend = prepareRoomToSend(room, user);
+const sendRoomDataToAll = (room: RoomType) => {
+  const roomToSend = prepareRoomToSend(room);
 
   room.users.forEach((user) => {
     user.send(
@@ -64,7 +66,7 @@ const sendRoomDataToAll = (room: RoomType, user: UserType) => {
         type: "ROOM_INFO",
         payload: {
           ...roomToSend,
-          userId: user.userId,
+          userId: user.userData.userId,
         },
       })
     );
@@ -85,7 +87,7 @@ const sendSetUsername = (user: UserType) => {
   user.send(
     JSON.stringify({
       type: "SET_USERNAME",
-      payload: user.username,
+      payload: user.userData.username,
     })
   );
 };
@@ -99,9 +101,32 @@ const sendWakeUp = (user: UserType) => {
 };
 
 const IDLING_TIMEOUT = 10000;
+const setIdleTimeout = (ws: UserType) => {
+  const { userData } = ws;
+  userData.isIdling = false;
+  if (userData.roomName) {
+    sendRoomDataToAll(rooms[userData.roomName]);
+  }
+  if (userData.idleTimeout) {
+    clearTimeout(userData.idleTimeout);
+  }
+  userData.idleTimeout = setTimeout(() => {
+    if (userData.uservote) {
+      return;
+    }
+
+    userData.isIdling = true;
+    if (userData.roomName) {
+      sendRoomDataToAll(rooms[userData.roomName]);
+    }
+  }, IDLING_TIMEOUT);
+};
 
 wss.on("connection", (ws: UserType) => {
-  ws.userId = v4();
+  ws.userData = {
+    userId: v4(),
+    isIdling: false,
+  };
 
   setInterval(() => {
     ws.send(
@@ -112,19 +137,21 @@ wss.on("connection", (ws: UserType) => {
   }, 30000);
 
   ws.on("close", () => {
-    if (!ws.roomName) {
+    if (!ws.userData.roomName) {
       return;
     }
-    const joinedRoom = rooms[ws.roomName];
+    const joinedRoom = rooms[ws.userData.roomName];
     if (joinedRoom) {
-      const index = joinedRoom.users.findIndex((user) => user === ws);
+      const index = joinedRoom.users.findIndex(
+        (user) => user.userData.userId === ws.userData.userId
+      );
       joinedRoom.users.splice(index, 1);
 
       if (joinedRoom.users.length === 0) {
-        delete rooms[ws.roomName];
+        delete rooms[ws.userData.roomName];
         return;
       }
-      sendRoomDataToAll(joinedRoom, ws);
+      sendRoomDataToAll(joinedRoom);
     }
   });
 
@@ -132,27 +159,11 @@ wss.on("connection", (ws: UserType) => {
     const packet = JSON.parse(data);
 
     if (packet.type !== "PONG") {
-      ws.isIdling = false;
-      if (ws.roomName) {
-        sendRoomDataToAll(rooms[ws.roomName], ws);
-      }
-      if (ws.idleTimeout) {
-        clearTimeout(ws.idleTimeout);
-      }
-      ws.idleTimeout = setTimeout(() => {
-        if (ws.uservote) {
-          return;
-        }
-
-        ws.isIdling = true;
-        if (ws.roomName) {
-          sendRoomDataToAll(rooms[ws.roomName], ws);
-        }
-      }, IDLING_TIMEOUT);
+      setIdleTimeout(ws);
     }
 
     if (packet.type === "QUIT_ROOM") {
-      const joinedRoom = ws.roomName && rooms[ws.roomName];
+      const joinedRoom = ws.userData.roomName && rooms[ws.userData.roomName];
       if (joinedRoom) {
         ws.send(
           JSON.stringify({
@@ -160,15 +171,17 @@ wss.on("connection", (ws: UserType) => {
             payload: null,
           })
         );
-        ws.roomName = undefined;
-        const index = joinedRoom.users.findIndex((user) => user === ws);
+        ws.userData.roomName = undefined;
+        const index = joinedRoom.users.findIndex(
+          (user) => user.userData.userId === ws.userData.userId
+        );
         joinedRoom.users.splice(index, 1);
 
         if (joinedRoom.users.length === 0) {
           delete rooms[joinedRoom.roomName];
           return;
         }
-        sendRoomDataToAll(joinedRoom, ws);
+        sendRoomDataToAll(joinedRoom);
       }
     }
 
@@ -180,11 +193,11 @@ wss.on("connection", (ws: UserType) => {
         return;
       }
 
-      ws.username = username;
+      ws.userData.username = username;
 
-      const joinedRoom = ws.roomName && rooms[ws.roomName];
+      const joinedRoom = ws.userData.roomName && rooms[ws.userData.roomName];
       if (joinedRoom) {
-        sendRoomDataToAll(joinedRoom, ws);
+        sendRoomDataToAll(joinedRoom);
       }
 
       sendSetUsername(ws);
@@ -193,45 +206,48 @@ wss.on("connection", (ws: UserType) => {
     if (packet.type === "SET_VOTE") {
       const vote = packet.payload;
 
-      ws.uservote = vote;
+      ws.userData.uservote = vote;
 
-      const joinedRoom = ws.roomName && rooms[ws.roomName];
+      const joinedRoom = ws.userData.roomName && rooms[ws.userData.roomName];
       if (joinedRoom) {
-        sendRoomDataToAll(joinedRoom, ws);
+        sendRoomDataToAll(joinedRoom);
       }
     }
 
     if (packet.type === "UNCOVER_CARDS") {
-      const joinedRoom = ws.roomName && rooms[ws.roomName];
+      const joinedRoom = ws.userData.roomName && rooms[ws.userData.roomName];
       if (!joinedRoom || joinedRoom.lockedVoting) return;
 
       const allVoted = !joinedRoom.users.find(
-        (user) => user.uservote === undefined
+        (user) => user.userData.uservote === undefined
       );
 
       if (allVoted) {
         joinedRoom.lockedVoting = true;
-        sendRoomDataToAll(joinedRoom, ws);
+        sendRoomDataToAll(joinedRoom);
 
         setTimeout(() => {
           joinedRoom.cardsCovered = false;
-          sendRoomDataToAll(joinedRoom, ws);
+          sendRoomDataToAll(joinedRoom);
         }, 3000);
       }
     }
 
     if (packet.type === "RESET_VOTING") {
-      const joinedRoom = ws.roomName && rooms[ws.roomName];
+      const joinedRoom = ws.userData.roomName && rooms[ws.userData.roomName];
       if (!joinedRoom || joinedRoom.cardsCovered) return;
 
       joinedRoom.lockedVoting = false;
       joinedRoom.cardsCovered = true;
-      joinedRoom.users.forEach((user) => (user.uservote = undefined));
+      joinedRoom.users.forEach((user) => {
+        user.userData.uservote = undefined;
+        setIdleTimeout(user);
+      });
 
-      sendRoomDataToAll(joinedRoom, ws);
+      sendRoomDataToAll(joinedRoom);
     }
 
-    if (ws.username && packet.type === "CREATE_ROOM") {
+    if (ws.userData.username && packet.type === "CREATE_ROOM") {
       const { roomName, password } = packet.payload;
 
       if (roomName.length < 3) {
@@ -239,12 +255,15 @@ wss.on("connection", (ws: UserType) => {
         return;
       }
 
-      if (rooms[roomName] || (ws.roomName && rooms[ws.roomName])) {
+      if (
+        rooms[roomName] ||
+        (ws.userData.roomName && rooms[ws.userData.roomName])
+      ) {
         sendError(ws, "Room already exists!");
         return;
       }
 
-      ws.roomName = roomName;
+      ws.userData.roomName = roomName;
 
       const key = v4();
       console.log({ key });
@@ -260,10 +279,10 @@ wss.on("connection", (ws: UserType) => {
 
       rooms[roomName] = newRoom;
 
-      sendRoomDataToAll(newRoom, ws);
+      sendRoomDataToAll(newRoom);
     }
 
-    if (ws.username && packet.type === "JOIN_ROOM") {
+    if (ws.userData.username && packet.type === "JOIN_ROOM") {
       const { roomName, password } = packet.payload;
 
       if (!rooms[roomName]) {
@@ -276,31 +295,31 @@ wss.on("connection", (ws: UserType) => {
         return;
       }
 
-      if (ws.roomName === roomName) {
+      if (ws.userData.roomName === roomName) {
         sendError(ws, "You have already joined this room!");
         return;
       }
 
-      ws.roomName = roomName;
+      ws.userData.roomName = roomName;
       rooms[roomName].users.push(ws);
-      sendRoomDataToAll(rooms[roomName], ws);
+      sendRoomDataToAll(rooms[roomName]);
     }
 
-    if (ws.username && packet.type === "JOIN_ROOM_VIA_KEY") {
+    if (ws.userData.username && packet.type === "JOIN_ROOM_VIA_KEY") {
       const { key } = packet.payload;
       const room = Object.values(rooms).find((room) => room.roomKey === key);
       if (room) {
-        ws.roomName = room.roomName;
+        ws.userData.roomName = room.roomName;
         rooms[room.roomName].users.push(ws);
-        sendRoomDataToAll(rooms[room.roomName], ws);
+        sendRoomDataToAll(rooms[room.roomName]);
       }
     }
 
     if (packet.type === "WAKE_USER_UP") {
-      const room = ws.roomName && rooms[ws.roomName];
+      const room = ws.userData.roomName && rooms[ws.userData.roomName];
       if (room) {
         const { id } = packet.payload;
-        const user = room.users.find((user) => user.userId === id);
+        const user = room.users.find((user) => user.userData.userId === id);
         if (user) {
           sendWakeUp(user);
         }

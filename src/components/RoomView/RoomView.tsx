@@ -103,7 +103,7 @@ export const RoomView = ({
 
   const { showCopyInfo, visibleCopyInfo } = useCopiedToClipBoardInfo();
 
-  const shareLink = `${window.location.href}?roomKey=${roomInfo.key}`;
+  const shareLink = `${window.location.origin}?roomKey=${roomInfo.key}`;
 
   const handleShareInputClick = React.useCallback(() => {
     navigator.clipboard.writeText(shareLink);
