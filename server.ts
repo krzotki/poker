@@ -118,8 +118,9 @@ const setIdleTimeout = (ws: UserType) => {
     }
 
     userData.isIdling = true;
-    if (userData.roomName) {
-      sendRoomDataToAll(rooms[userData.roomName]);
+    const room = userData.roomName && rooms[userData.roomName];
+    if (room) {
+      sendRoomDataToAll(room);
     }
   }, IDLING_TIMEOUT);
 };
