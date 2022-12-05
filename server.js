@@ -23,7 +23,7 @@ app.get("/", function (req, res) {
 app.use("/", express.static(__dirname + "/build/"));
 server.listen(process.env.PORT || 8080, function () {
     var address = server.address();
-    console.log("Server started at ".concat(address.address, ":").concat(address.port));
+    console.log("Server started at ".concat(address.port));
 });
 var wss = new ws.Server({ server: server });
 var rooms = {};
@@ -87,8 +87,9 @@ var setIdleTimeout = function (ws) {
             return;
         }
         userData.isIdling = true;
-        if (userData.roomName) {
-            sendRoomDataToAll(rooms[userData.roomName]);
+        var room = userData.roomName && rooms[userData.roomName];
+        if (room) {
+            sendRoomDataToAll(room);
         }
     }, IDLING_TIMEOUT);
 };
