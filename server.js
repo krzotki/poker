@@ -15,6 +15,7 @@ var express = require("express");
 var http = require("http");
 var ws = require("ws");
 var uuid_1 = require("uuid");
+require('dotenv').config();
 var app = express();
 var server = http.createServer(app);
 app.get("/", function (req, res) {

@@ -3,6 +3,8 @@ import * as http from "http";
 import * as ws from "ws";
 import { v4 } from "uuid";
 
+require('dotenv').config()
+
 const app = express();
 const server = http.createServer(app);
 
