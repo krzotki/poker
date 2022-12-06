@@ -3,8 +3,6 @@ import * as http from "http";
 import * as ws from "ws";
 import { v4 } from "uuid";
 
-require('dotenv').config()
-
 const app = express();
 const server = http.createServer(app);
 
@@ -120,8 +118,9 @@ const setIdleTimeout = (ws: UserType) => {
     }
 
     userData.isIdling = true;
-    if (userData.roomName) {
-      sendRoomDataToAll(rooms[userData.roomName]);
+    const room = userData.roomName && rooms[userData.roomName];
+    if (room) {
+      sendRoomDataToAll(room);
     }
   }, IDLING_TIMEOUT);
 };
