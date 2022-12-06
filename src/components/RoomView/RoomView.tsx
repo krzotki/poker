@@ -3,8 +3,8 @@ import styles from "../../App.module.scss";
 import sleepingStyles from "./sleepingStyles.module.scss";
 import cx from "classnames";
 import React from "react";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faCircleArrowLeft } from "@fortawesome/free-solid-svg-icons";
+// import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+// import { faCircleArrowLeft } from "@fortawesome/free-solid-svg-icons";
 import { useTableResize } from "../../hooks/useTableResize";
 import { useCopiedToClipBoardInfo } from "../../hooks/useCopiedToClipboardInfo";
 
@@ -200,11 +200,11 @@ export const RoomView = ({
             );
           })}
       </div>
-      <FontAwesomeIcon
+      {/* <FontAwesomeIcon
         onClick={handleBackClick}
         className={styles.backButton}
         icon={faCircleArrowLeft}
-      />
+      /> */}
       {/* 
       <h1>Room name: {roomInfo.roomName}</h1>      
       */}
